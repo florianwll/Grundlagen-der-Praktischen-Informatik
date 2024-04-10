@@ -1,0 +1,205 @@
+% preamble.tex aus der Vorlesung
+\documentclass[a4paper]{article}
+\usepackage[a4paper,left=1.5cm,right=1.5cm,top=2cm,bottom=3cm]{geometry}
+\usepackage{etex}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{tabto}
+\usepackage{hyphsubst}
+\HyphSubstIfExists{ngerman-x-latest}{%
+  \HyphSubstLet{ngerman}{ngerman-x-latest}}{}
+\HyphSubstIfExists{german-x-latest}{%
+  \HyphSubstLet{german}{german-x-latest}}{}
+\usepackage[english,ngerman]{babel}
+\usepackage{textcomp}
+\usepackage{microtype}
+
+% Figuren Package
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+
+%Math Packages
+\usepackage{nicefrac,mathtools,enumitem}
+\usepackage[all]{xy}
+\usepackage[lite]{amsrefs}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{mathtools}
+
+\newtheorem{definition}[equation]{Definition}
+\newtheorem{satz}[equation]{Satz}
+
+% Math Commands
+\newcommand*{\ksum}[2][n]{\sum^{#1}_{k = #2}}
+\newcommand*{\norm}[1][x]{\|#1\|}
+\newcommand*{\elemof}[2][n]{#1 \in \mathbb{#2} } % Element of (N, Z, Q, R, C)
+\newcommand*{\R}{\mathbb{R}} % R
+\newcommand*{\K}{\mathbb{K}} % K
+\newcommand*{\C}{\mathbb{C}} % C
+\newcommand*{\N}{\mathbb{N}} % N
+
+\newcommand{\complex}[2]{|#1|(\cos (#2) + i \sin (#2))}
+\newcommand*{\Rn}{$\R^n$ } % R^n als Text Print
+
+
+\title{Vorlesung 1}
+\author{Ramon Cemil Kimyon}
+\date{}
+
+
+\begin{document}
+\section{Haskell}
+\subsection{Haskell Typen}
+\[
+\begin{array}{ll}
+    \textsf{Float} & \textnormal{Gleitkomma-Zahlen mit einfacher Genauigkeit 32bit} \\
+    \textsf{Double} & \textnormal{Gleitkomma-Zahlen mit doppelter Genauigkeit 64bit} \\
+    \textsf{Int} & \textnormal{beschränktes Ganzzahl} \\
+    \textsf{Integer} & \textnormal{unbeschränkte Ganzzahl} \\
+    \textsf{Bool} & \textnormal{Wahrheitswerte true/false} \\
+    \textsf{Char} & \textnormal{Zeichen} \\
+    \textsf{Type} & \textnormal{Liste von Typen} \\
+    \textsf{(TypeA, TypeB)} & \textnormal{Paar von Typen Tupel} \\
+    \textsf{TypeA -> TypeB} & \textnormal{Typenfunktion}
+\end{array}
+\]
+\subsection{Haskell Funktion}
+\begin{verbatim}
+    f :: X -> Y
+\end{verbatim}
+\subsubsection{Beispiel}
+\begin{verbatim}
+    sqrt :: Float -> Float
+    first :: (String, Int) -> String
+    second :: (String, Int) -> Int
+    not :: Bool -> Bool
+    and :: [Bool] -> Bool
+    logBase :: Float -> Float -> Float
+\end{verbatim}
+\subsubsection{Anwendung}
+So ruft man die Funktion auf:
+\begin{verbatim}
+    f x
+\end{verbatim}
+\subsubsection{Funktionsaufbau sich ansehen}
+\begin{verbatim}
+    :t Funktionsname
+\end{verbatim}
+\subsection{Operatoren}
+\begin{verbatim}
+    (op) :: X -> Y -> Z
+\end{verbatim}
+\subsubsection{Schreibweise}
+\begin{verbatim}
+    (op) x y 
+    x op y 
+\end{verbatim}
+\subsection{Funktion definieren}
+\begin{verbatim}
+    f :: Int -> Int
+    f x = x * x + x
+\end{verbatim}
+ist dasselbe wie:
+\begin{align*}
+    f : \mathbb{Z} \rightarrow \mathbb{Z} \\
+    f(x) = x^2 + x
+\end{align*}
+\subsection{Datei Laden}
+\begin{verbatim}
+    :l filename
+\end{verbatim}
+
+\section{Haskell Pattern Matching}
+\subsection{Verschiedene Pattern}
+\begin{itemize}
+    \item jedes einzelnte Pattern ist einzelnt
+    \item es kann mehrere Patterns angegeben werden
+    \item von oben nach unten
+\end{itemize}
+\subsubsection{Beispiel}
+\begin{verbatim}
+    -- negation
+    neg :: Bool -> Bool
+    neg False = True
+
+    -- Konjunktion
+    (<&>) :: Bool -> Bool -> Bool
+    (<&>) True True = True
+    (<&>) _ _ = False
+\end{verbatim}
+
+\subsection{Unterstriche}
+Kann genutzt werdeb un irgendeine Random variable anzugeben.
+
+
+\section{Haskell Alternativen}
+
+\subsection{If - Else}
+\begin{align*}
+    \text{abs}(x) = \begin{cases}
+        -x & x < 0 \\
+        x & \text{sonst}
+    \end{cases}
+\end{align*}
+\subsubsection{Erste Art das umzusetzen}
+\begin{verbatim}
+    absolute :: Int -> Int
+    absolute x = if x < 0 then -x else x
+\end{verbatim}
+\subsubsection{Mehrere Conditions}
+\begin{verbatim}
+    absolute :: Int -> Int
+    absolute x
+        | x < 0 = -x
+        | otherwise = x
+\end{verbatim}
+
+\section{Haskell Rekursion}
+
+\subsection{Beispiel}
+\begin{align*}
+    \text{heron}_n : \R^+ \rightarrow \R^+ \\
+    \text{heron}(n,a) = \begin{cases}
+        (\text{heron}(n - 1, a) + a/\text{heron}(n-1,a))/2 & n > 0 \\
+        a & \text{sonst}
+    \end{cases}
+\end{align*}
+\begin{verbatim}
+    heronA :: (Int, Double) -> Double
+    heronA n a
+        | n > 0 = (heronA(n - 1, a) + a / heronA(n - 1, a))/2
+        | otherwise = a
+\end{verbatim}
+
+\subsection{where - Operator}
+Haskell bietet nicht die Möglichkeit Speicherplatz zu reservieren \\
+Aber man kann where verwenden für lokale Platzhalter definitionen
+
+\begin{verbatim}
+    heronA :: (Int, Double) -> Double
+    heronA n a
+        | n > 0 = (x + a / x)/2
+        | otherwise = a
+        where x = heronA(n - 1, a)
+\end{verbatim}
+
+\subsection{error-Handling}
+\begin{verbatim}
+    fibC :: Int -> Int
+    fibC 0 = 0
+    fibC 1 = 0
+    fibC n
+        | n < 0 = error "illegal argument"
+        | otherwise = fibC(n - 1) + fibC(n - 2)
+\end{verbatim}
+
+\subsection{Um -7 in der Konsole zu benutzen beispielsweise}
+\begin{verbatim}
+    fibC $ -7
+\end{verbatim}
+
+\end{document}
