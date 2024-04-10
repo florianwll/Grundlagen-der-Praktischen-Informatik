@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# input: html
+# output: pdf
+
+usage_exit() {
+    echo "USAGE: ${0} <html-file>" >&2 
+    exit 0
+}
+
+html=$1
+
+if [ -z "${html}" ]
+then
+    usage_exit
+fi
+
+if [ ! -r "${html}" ]
+then
+    echo "ERROR: input file \"${html}\" not found" >&2 
+    usage_exit
+fi
+
+name=`echo "${html}" | cut -d'.' -f1` 
+pdf="${name}.pdf"
+
+chromium --headless --disable-gpu --print-to-pdf="${pdf}" --run-all-compositor-stages-before-draw --virtual-time-budget=10000 "${html}"

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Mi 10. Apr 14:36:07 CEST 2024 Markdown/AsciiMath to HTML (by marked)</title>
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/3.0.1/github-markdown.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/latest.js?config=AM_CHTML"></script>
+  <script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  asciimath2jax: {
+    delimiters: [['$','$']]
+  }
+});
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="markdown-body">
+  <div id="display"></div>
+  <script>
+    content =
+"# Grundlagen der Praktischen Informatik\n\n## 1. FUNKTIONALE PROGRAMMIERUNG\n\n### 1.4 Alternativen\n\nBetrachten wir folgende Definition des Betrags einer ganzen Zahl.\n\n$\"abs\"(x) = {(-x,\"wenn\",x < 0),(x,\"sonst\",):}$\n\nUm diese Definition umzusetzen, bietet sich ein bedingter Ausdruck an.\n\n\n**if** *[test]* **then** *[expr_if]* **else** *[expr_else]*\n\n\nAnhängig vom *[test]* (ein Ausdruck der nach `Bool` ausgewertet wird)\nnimmt der Ausdruck für\n\n- *[test]* `== True` den Wert von *[expr_if]* an.\n- *[test]* `== False` den Wert von *[expr_else]* an.\n\n\n```\nabsolute :: Int -> Int\nabsolute x = if x < 0 then -x else x\n```";async function displayer(){ // MathJax is not usable right after import, so we just wait and check until it is
+    // markdown and asciimath do not naturally cooperate - we have to extract the asciimath parts and insert them later
+	// we have to differentiate though: if the asciimath parts were in code areas (i.e. pre-tags), then we do not want to convert them
+	//
+	// we note that asciimath and pre-tags can not be interleaved in any sensible way, so we ignore that case
+	var mathCounter = 0;
+	var mathContents = [];
+	while(((content.match(/\$/g) || []).length >= 2)){ // while there is still possible AsciiMath
+		var start = content.indexOf("$");
+		var end = content.indexOf("$", start + 1);
+		mathContents.push(content.substring(start, end + 1));
+		content = content.substring(0, start) + "<span id = 'ASCIIMATHREINSERTIONPLACEHOLDER" + mathCounter + "'></span>" + content.substring(end + 1); // it would be nicer to do without this, but what about sorting out hBsigns inside backtick-maths, or the other way around?
+		mathCounter++;
+	}
+
+	while(typeof(MathJax) == "undefined"){ // we need MathJax in the next step, and may have to wait until it is initialized (does not happen on immediately import (even though it is not async))
+		await new Promise(resolve => setTimeout(resolve, 100));
+	}
+	document.getElementById("display").innerHTML = marked.parse(content);
+	for(var mathNumber = 0; mathNumber < mathCounter; mathNumber++){ // here we go through all parent elements of any contained tag and check if they are <pre>-elements if one is, then this is code ()
+		var edEl = document.getElementById('ASCIIMATHREINSERTIONPLACEHOLDER' + mathNumber);
+		if(edEl == null){ // the tag has fallen into a code area, turning it into plain text
+		    document.body.outerHTML = document.body.outerHTML.replace("&lt;span id = 'ASCIIMATHREINSERTIONPLACEHOLDER" + mathNumber + "'&gt;&lt;/span&gt;", mathContents[mathNumber])
+		}
+		else{
+			edEl.innerHTML = mathContents[mathNumber];
+			MathJax.Hub.Typeset(edEl);
+		}
+	}
+  };
+
+  displayer();
+  </script>
+</body>
+</html>
+
+</body>
+</html>

@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# input: Markdowm + AsciiMath
+# output: html
+
+usage_exit() {
+    echo "USAGE: ${0} <input-file> [headline]" >&2
+    exit 0
+}
+
+txt=$1
+
+
+if [ -z "${txt}" ]
+then
+    usage_exit
+fi
+
+if [ ! -r "${txt}" ]
+then
+    echo "ERROR: input file \"${txt}\" not found" >&2
+    usage_exit
+fi
+
+name=`echo "${txt}" | cut -d'.' -f1`
+html="${name}.html"
+pdf="${name}.pdf"
+if [ -z "$2" ]
+then
+   headline="$(date) Markdown/AsciiMath to HTML (by marked)"
+else
+   headline=$2
+fi
+
+echo "INFO: write file \"${html}\"" >&2
+
+cat <<EOF > ${html}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${headline}</title>
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/3.0.1/github-markdown.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/latest.js?config=AM_CHTML"></script>
+  <script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  asciimath2jax: {
+    delimiters: [['$','$']]
+  }
+});
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="markdown-body">
+  <div id="display"></div>
+  <script>
+    content =
+EOF
+
+printf '"' >> ${html}
+cat ${txt} | perl -pe 's/\\/\\\\/g' | perl -pe 's/\"/\\\"/g' | perl -pe "s/\'/\\\'/g" | perl -pe 's/\r\n/\n/g' | perl -pe 's/\r/\n/g' | perl -pe 's/\n/\\n/g' >> ${html}
+printf '";' >> ${html}
+
+cat <<EOF >> ${html}
+async function displayer(){ // MathJax is not usable right after import, so we just wait and check until it is
+    // markdown and asciimath do not naturally cooperate - we have to extract the asciimath parts and insert them later
+	// we have to differentiate though: if the asciimath parts were in code areas (i.e. pre-tags), then we do not want to convert them
+	//
+	// we note that asciimath and pre-tags can not be interleaved in any sensible way, so we ignore that case
+	var mathCounter = 0;
+	var mathContents = [];
+	while(((content.match(/\\$/g) || []).length >= 2)){ // while there is still possible AsciiMath
+		var start = content.indexOf("$");
+		var end = content.indexOf("$", start + 1);
+		mathContents.push(content.substring(start, end + 1));
+		content = content.substring(0, start) + "<span id = 'ASCIIMATHREINSERTIONPLACEHOLDER" + mathCounter + "'></span>" + content.substring(end + 1); // it would be nicer to do without this, but what about sorting out $-signs inside backtick-maths, or the other way around?
+		mathCounter++;
+	}
+
+	while(typeof(MathJax) == "undefined"){ // we need MathJax in the next step, and may have to wait until it is initialized (does not happen on immediately import (even though it is not async))
+		await new Promise(resolve => setTimeout(resolve, 100));
+	}
+	document.getElementById("display").innerHTML = marked.parse(content);
+	for(var mathNumber = 0; mathNumber < mathCounter; mathNumber++){ // here we go through all parent elements of any contained tag and check if they are <pre>-elements if one is, then this is code ()
+		var edEl = document.getElementById('ASCIIMATHREINSERTIONPLACEHOLDER' + mathNumber);
+		if(edEl == null){ // the tag has fallen into a code area, turning it into plain text
+		    document.body.outerHTML = document.body.outerHTML.replace("&lt;span id = 'ASCIIMATHREINSERTIONPLACEHOLDER" + mathNumber + "'&gt;&lt;/span&gt;", mathContents[mathNumber])
+		}
+		else{
+			edEl.innerHTML = mathContents[mathNumber];
+			MathJax.Hub.Typeset(edEl);
+		}
+	}
+  };
+
+  displayer();
+  </script>
+</body>
+</html>
+
+</body>
+</html>
+EOF
