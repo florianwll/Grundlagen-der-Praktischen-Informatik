@@ -45,4 +45,5 @@ main = do
     print $ prog "c$"     -- Should print Just ""
     print $ prog "cc*$"   -- Should print Nothing
     print $ prog "c*c*$"  -- Should print Just ""
+    print $ prog "-c"
 
